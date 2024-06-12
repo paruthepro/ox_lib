@@ -1,5 +1,9 @@
 ---@diagnostic disable: invisible
-lib.print.warn('ox_lib\'s class module is experimental and may break without warning.')
+local getinfo = debug.getinfo
+
+if not getinfo(1, 'S').source:match('^@@ox_lib') then
+    lib.print.warn('ox_lib\'s class module is experimental and may break without warning.')
+end
 
 ---Ensure the given argument or property has a valid type, otherwise throwing an error.
 ---@param id number | string
@@ -31,7 +35,6 @@ end
 ---@field protected constructor? OxClassConstructor
 local mixins = {}
 local constructors = {}
-local getinfo = debug.getinfo
 
 ---Somewhat hacky way to remove the constructor from the class.__index.
 ---Maybe add static fields in the future?
@@ -50,6 +53,7 @@ end
 local function void() return '' end
 
 ---Creates a new instance of the given class.
+---@protected
 ---@generic T
 ---@param class T | OxClass
 ---@return T
@@ -85,14 +89,14 @@ function mixins.new(class, ...)
             __index = function(self, index)
                 local di = getinfo(2, 'n')
 
-                if di.namewhat == 'local' then return end
+                if di.namewhat ~= 'method' and di.namewhat ~= '' then return end
 
                 return private[index]
             end,
             __newindex = function(self, index, value)
                 local di = getinfo(2, 'n')
 
-                if di.namewhat ~= 'method' then
+                if di.namewhat ~= 'method' and di.namewhat ~= '' then
                     error(("cannot set value of private field '%s'"):format(index), 2)
                 end
 
